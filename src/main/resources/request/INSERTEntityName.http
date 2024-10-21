@@ -1,0 +1,28 @@
+GET {{URL}}
+
+###
+#\#EKSEMPLER PÅ FORESPØRGSLER, UDFYLD URL OG JSON DATA SELV
+
+POST {{URL}}
+Content-Type: application/json
+
+{
+  "name": "Manu",
+  "age": 8,
+  "breed": "BULLDOG"
+}
+
+###
+
+PUT {{URL}}/1
+Content-Type: application/json
+
+{
+  "name": "Buddy",
+  "age": 10,
+  "breed": "LABRADOR"
+}
+
+###
+
+DELETE {{URL}}/2
