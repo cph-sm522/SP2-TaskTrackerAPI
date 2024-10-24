@@ -1,0 +1,39 @@
+### Get all tasks (Requires login)
+GET {{URL}}
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+### Create a new task (Requires login)
+POST {{URL}}
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "description": "Buy bday gift for mom",
+  "dueDate": "2024-10-29",
+  "dueTime": "17:00",
+  "repeated": false,
+  "completed": false,
+  "assignedTo": 3
+}
+
+### Update an existing task (Requires login)
+PUT {{URL}}/5
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "description": "Wash black clothes",
+  "assignedTo": 3,
+  "dueDate": "2024-10-26",
+  "dueTime": "14:00",
+  "repeated": false,
+  "completed": false
+}
+
+### Delete a task for a specific user (Requires login)
+DELETE {{URL}}/user/2
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
