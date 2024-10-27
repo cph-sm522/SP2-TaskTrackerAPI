@@ -1,0 +1,39 @@
+### Get all tasks (Requires login)
+GET {{URL}}/3
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJTYW5kcmEgTWVydmVpbGxlIiwic3ViIjoic2FuZHJhbWVydiIsImV4cCI6MTczMDA1MzA3Niwicm9sZXMiOiJhZG1pbix1c2VyIiwidXNlcm5hbWUiOiJzYW5kcmFtZXJ2In0.9aYq6fx1aKPmZy5C7uMh-aF6BdBJXuC7A5euD8mb2jA
+
+### Create a new task (Requires login)
+POST {{URL}}
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJTYW5kcmEgTWVydmVpbGxlIiwic3ViIjoic2FuZHJhbWVydiIsImV4cCI6MTczMDA1MzA3Niwicm9sZXMiOiJhZG1pbix1c2VyIiwidXNlcm5hbWUiOiJzYW5kcmFtZXJ2In0.9aYq6fx1aKPmZy5C7uMh-aF6BdBJXuC7A5euD8mb2jA
+
+{
+  "description": "Shop for BDAY",
+  "dueDate": "2024-10-24",
+  "dueTime": "18:00",
+  "repeated": false,
+  "completed": false,
+  "assignedTo": 9
+}
+
+### Update an existing task (Requires login)
+PUT {{URL}}/5
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJTYW5kcmEgTWVydmVpbGxlIiwic3ViIjoibHVrYXMxMiIsImV4cCI6MTcyOTg5NzI5Nywicm9sZXMiOiJhZG1pbix1c2VyIiwidXNlcm5hbWUiOiJsdWthczEyIn0.hWhVjzM1BYaUQhInCeyKtTcojzIHlO2zT41D3nLgHd4
+
+{
+  "description": "Wash black clothes",
+  "assignedTo": 3,
+  "dueDate": "2024-10-26",
+  "dueTime": "14:00",
+  "repeated": false,
+  "completed": false
+}
+
+### Delete a task for a specific user (Requires login)
+DELETE {{URL}}/user/2
+Accept: application/json
+Authorization: Bearer {{jwt_token}}

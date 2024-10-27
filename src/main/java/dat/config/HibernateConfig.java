@@ -1,5 +1,8 @@
 package dat.config;
 
+import dat.entities.Task;
+import dat.entities.User;
+import dat.security.entities.Role;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -28,7 +31,9 @@ public class HibernateConfig {
     }
     // TODO: IMPORTANT: Add Entity classes here for them to be registered with Hibernate
     private static void getAnnotationConfiguration(Configuration configuration) {
-        //configuration.addAnnotatedClass("INSERT ENTITY".class);
+        configuration.addAnnotatedClass(User.class);
+        configuration.addAnnotatedClass(Task.class);
+        configuration.addAnnotatedClass(Role.class);
     }
 
     private static EntityManagerFactory createEMF(boolean forTest, String DBName) {
@@ -62,7 +67,7 @@ public class HibernateConfig {
 
     private static String getDBName() {
 //        return Utils.getPropertyValue("db.name", "properties-from-pom.properties");
-        return "INSERT DB NAME";
+        return "tasktracker";
     }
 
     private static Properties setBaseProperties(Properties props){

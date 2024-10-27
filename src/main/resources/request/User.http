@@ -1,0 +1,20 @@
+### Get user by ID (Requires login)
+GET {{URL}}/1
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+### Update user by ID (Requires login)
+PUT {{URL}}/1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "username": "john_updated",
+  "email": "john_updated@example.com"
+}
+
+### Delete user by ID (Requires admin role)
+DELETE {{URL}}/1
+Accept: application/json
+Authorization: Bearer {{jwt_token}}

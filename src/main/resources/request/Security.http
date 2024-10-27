@@ -1,0 +1,56 @@
+### A simple get request to the test endpoint (Public)
+GET {{url}}/auth/test/
+
+### Register a new user (Public)
+POST {{url}}/auth/register/
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "nellus22",
+  "password": "aabb123",
+  "email": "nell@nell.dk"
+}
+
+### Log in and retrieve a JWT token (Public)
+POST {{url}}/auth/login/
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "nellus22",
+  "password": "aabb123"
+}
+
+> {%
+    client.global.set("jwt_token", response.body.token);
+    console.log("JWT Token:", client.global.get("jwt_token"));
+%}
+
+### Access a protected user endpoint (Requires login)
+GET {{url}}/protected/user_demo/
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+### Access a protected admin endpoint (Requires admin role)
+GET {{url}}/protected/admin_demo/
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+### Add the admin role to a user (Requires admin role)
+POST {{url}}/auth/user/addrole/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJTYW5kcmEgTWVydmVpbGxlIiwic3ViIjoibmVsbHVzMjIiLCJleHAiOjE3MzAwNTc3ODQsInJvbGVzIjoidXNlciIsInVzZXJuYW1lIjoibmVsbHVzMjIifQ.VQiBwpeRzyWN7mC0FhNTHUTECW1K_T1NiKx6x565pmo
+
+{
+  "role": "admin"
+}
+
+### Reset token (Test route)
+GET {{url}}/auth/test/
+
+> {%
+    client.global.set("jwt_token", null);
+    console.log("JWT Token reset.");
+%}

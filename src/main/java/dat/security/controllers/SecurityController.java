@@ -1,0 +1,211 @@
+package dat.security.controllers;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.nimbusds.jose.JOSEException;
+import dk.bugelhartmann.UserDTO;
+import dat.entities.User;
+import dat.mappers.UserMapper;
+import dat.utils.Utils;
+import dat.config.HibernateConfig;
+import dat.security.daos.ISecurityDAO;
+import dat.security.daos.SecurityDAO;
+import dat.security.exceptions.ApiException;
+import dat.security.exceptions.NotAuthorizedException;
+import dat.security.exceptions.ValidationException;
+import dk.bugelhartmann.ITokenSecurity;
+import dk.bugelhartmann.TokenSecurity;
+import io.javalin.http.Handler;
+import io.javalin.http.HttpStatus;
+import io.javalin.http.UnauthorizedResponse;
+import io.javalin.security.RouteRole;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.text.ParseException;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+public class SecurityController implements ISecurityController {
+    ObjectMapper objectMapper = new ObjectMapper();
+    ITokenSecurity tokenSecurity = new TokenSecurity();
+    private static ISecurityDAO securityDAO;
+    private static SecurityController instance;
+    private static Logger logger = LoggerFactory.getLogger(SecurityController.class);
+
+    private SecurityController() {
+    }
+
+    public static SecurityController getInstance() { // Singleton because we don't want multiple instances of the same class
+        if (instance == null) {
+            instance = new SecurityController();
+        }
+        securityDAO = new SecurityDAO(HibernateConfig.getEntityManagerFactory("poems"));
+        return instance;
+    }
+
+    @Override
+    public Handler login() {
+        return (ctx) -> {
+            ObjectNode returnObject = objectMapper.createObjectNode(); // for sending JSON responses
+            try {
+                // Parse request body to local UserDTO
+                dat.dtos.UserDTO user = ctx.bodyAsClass(dat.dtos.UserDTO.class);
+
+                dat.dtos.UserDTO verifiedUser = securityDAO.getVerifiedUser(user.getUsername(), user.getPassword());
+
+                UserDTO bugelUserDTO = UserMapper.toBugelUserDTO(verifiedUser);
+
+                // Confirm username is set before token creation
+                if (bugelUserDTO.getUsername() == null) {
+                    throw new RuntimeException("Username is null in UserDTO");
+                }
+
+                String token = createToken(bugelUserDTO);
+
+                ctx.status(200).json(returnObject
+                        .put("token", token)
+                        .put("username", bugelUserDTO.getUsername()));
+
+            } catch (EntityNotFoundException | ValidationException e) {
+                ctx.status(401);
+                System.out.println(e.getMessage());
+                ctx.json(returnObject.put("msg", e.getMessage()));
+            }
+        };
+    }
+
+    @Override
+    public Handler register() {
+        return (ctx) -> {
+            ObjectNode returnObject = objectMapper.createObjectNode();
+            try {
+                dat.dtos.UserDTO userInput = ctx.bodyAsClass(dat.dtos.UserDTO.class);
+                User created = securityDAO.createUser(userInput.getUsername(), userInput.getPassword(), userInput.getEmail());
+                String token = createToken(new UserDTO(created.getUsername(), created.getPassword(), Set.of("USER")));
+
+                ctx.status(HttpStatus.CREATED).json(returnObject
+                        .put("token", token)
+                        .put("username", created.getUsername())
+                        .put("email", created.getEmail()));
+            } catch (EntityExistsException e) {
+                ctx.status(HttpStatus.UNPROCESSABLE_CONTENT).json(returnObject.put("msg", "User already exists"));
+            }
+        };
+    }
+
+    @Override
+    public Handler authenticate() throws UnauthorizedResponse {
+
+        return (ctx) -> {
+            // This is a preflight request => OK
+            if (ctx.method().toString().equals("OPTIONS")) {
+                ctx.status(200);
+                return;
+            }
+            String header = ctx.header("Authorization");
+            if (header == null) {
+                throw new UnauthorizedResponse("Authorization header missing");
+            }
+
+            String[] headerParts = header.split(" ");
+            if (headerParts.length != 2) {
+                throw new UnauthorizedResponse("Authorization header malformed");
+            }
+
+            String token = headerParts[1];
+            UserDTO verifiedTokenUser = verifyToken(token);
+
+            if (verifiedTokenUser == null) {
+                throw new UnauthorizedResponse("Invalid User or Token");
+            }
+            logger.info("User verified: " + verifiedTokenUser);
+            System.out.println("Setting user attribute with username: " + verifiedTokenUser.getUsername());
+            ctx.attribute("user", verifiedTokenUser);
+        };
+    }
+
+    @Override
+    // Check if the user's roles contain any of the allowed roles
+    public boolean authorize(UserDTO user, Set<RouteRole> allowedRoles) {
+        if (user == null) {
+            throw new UnauthorizedResponse("You need to log in, dude!");
+        }
+        Set<String> roleNames = allowedRoles.stream()
+                .map(RouteRole::toString)  // Convert RouteRoles to  Set of Strings
+                .collect(Collectors.toSet());
+        return user.getRoles().stream()
+                .map(String::toUpperCase)
+                .anyMatch(roleNames::contains);
+    }
+
+    @Override
+    public String createToken(UserDTO user) {
+        try {
+            String ISSUER;
+            String TOKEN_EXPIRE_TIME;
+            String SECRET_KEY;
+
+            if (System.getenv("DEPLOYED") != null) {
+                ISSUER = System.getenv("ISSUER");
+                TOKEN_EXPIRE_TIME = System.getenv("TOKEN_EXPIRE_TIME");
+                SECRET_KEY = System.getenv("SECRET_KEY");
+            } else {
+                ISSUER = Utils.getPropertyValue("ISSUER", "config.properties");
+                TOKEN_EXPIRE_TIME = Utils.getPropertyValue("TOKEN_EXPIRE_TIME", "config.properties");
+                SECRET_KEY = Utils.getPropertyValue("SECRET_KEY", "config.properties");
+            }
+            System.out.println("Creating token for user: " + user.getUsername());
+            return tokenSecurity.createToken(user, ISSUER, TOKEN_EXPIRE_TIME, SECRET_KEY);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ApiException(500, "Could not create token");
+        }
+    }
+
+    @Override
+    public UserDTO verifyToken(String token) {
+        boolean IS_DEPLOYED = (System.getenv("DEPLOYED") != null);
+        String SECRET = IS_DEPLOYED ? System.getenv("SECRET_KEY") : Utils.getPropertyValue("SECRET_KEY", "config.properties");
+
+        try {
+            if (tokenSecurity.tokenIsValid(token, SECRET) && tokenSecurity.tokenNotExpired(token)) {
+                return tokenSecurity.getUserWithRolesFromToken(token);
+            } else {
+                throw new NotAuthorizedException(403, "Token is not valid");
+            }
+        } catch (ParseException | JOSEException | NotAuthorizedException e) {
+            e.printStackTrace();
+            throw new ApiException(HttpStatus.UNAUTHORIZED.getCode(), "Unauthorized. Could not verify token");
+        }
+    }
+
+    public Handler addRole() {
+        return (ctx) -> {
+            ObjectNode returnObject = objectMapper.createObjectNode();
+            try {
+
+                authenticate().handle(ctx);
+                UserDTO bugelUserDTO = ctx.attribute("user");
+
+                if (bugelUserDTO == null) {
+                    throw new UnauthorizedResponse("User is not authenticated. Attribute 'user' is null.");
+                }
+
+                dat.dtos.UserDTO localUserDTO = UserMapper.fromBugelUserDTO(bugelUserDTO);
+
+                // We need to get the role from the body and the username from the token
+                String newRole = ctx.bodyAsClass(ObjectNode.class).get("role").asText();
+
+                securityDAO.addRole(localUserDTO, newRole);
+                ctx.status(200).json(returnObject.put("msg", "Role " + newRole + " added to user"));
+            } catch (EntityNotFoundException e) {
+                ctx.status(404).json(returnObject.put("msg", "User not found"));
+            }
+        };
+    }
+
+}
