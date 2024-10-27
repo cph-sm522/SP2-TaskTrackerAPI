@@ -13,9 +13,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJTYW5kcmEgTWVydmVpbGxlIiwic
   "description": "Shop for BDAY",
   "dueDate": "2024-10-24",
   "dueTime": "18:00",
-  "repeated": true,
+  "repeated": false,
   "completed": false,
-  "assignedTo": 3
+  "assignedTo": 9
 }
 
 ### Update an existing task (Requires login)

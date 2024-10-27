@@ -36,7 +36,11 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
     public User(String username, String password, String email) {
+        this.username = username;
+        this.password = BCrypt.hashpw(password, BCrypt.gensalt());
+        this.email = email;
     }
+
 
     public boolean verifyPassword(String pw) {
         return BCrypt.checkpw(pw, this.password);

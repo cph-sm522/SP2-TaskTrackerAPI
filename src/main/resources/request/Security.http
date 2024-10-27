@@ -7,9 +7,9 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "username": "sandramerv",
-  "password": "567fgh",
-  "email": "sandra@me.dk"
+  "username": "nellus22",
+  "password": "aabb123",
+  "email": "nell@nell.dk"
 }
 
 ### Log in and retrieve a JWT token (Public)
@@ -18,8 +18,8 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "username": "sandramerv",
-  "password": "567fgh"
+  "username": "nellus22",
+  "password": "aabb123"
 }
 
 > {%
@@ -41,7 +41,7 @@ Authorization: Bearer {{jwt_token}}
 POST {{url}}/auth/user/addrole/
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJTYW5kcmEgTWVydmVpbGxlIiwic3ViIjoic2FuZHJhbWVydiIsImV4cCI6MTcyOTg5ODc5Mywicm9sZXMiOiJ1c2VyIiwidXNlcm5hbWUiOiJzYW5kcmFtZXJ2In0.2jZzef0EmYYiNM3SFxMVfnbfvlBboWcFLrs41uhuc2w
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJTYW5kcmEgTWVydmVpbGxlIiwic3ViIjoibmVsbHVzMjIiLCJleHAiOjE3MzAwNTc3ODQsInJvbGVzIjoidXNlciIsInVzZXJuYW1lIjoibmVsbHVzMjIifQ.VQiBwpeRzyWN7mC0FhNTHUTECW1K_T1NiKx6x565pmo
 
 {
   "role": "admin"
