@@ -19,11 +19,11 @@ public class TaskRoutes {
 
     public EndpointGroup getTaskRoutes(){
         return () -> {
-            get("/", ctx -> taskController.getAllTasks(ctx), Role.ANYONE);
-            get("/{id}", ctx -> taskController.getAllTasksFromUser(ctx), Role.ANYONE);
-            post("/", ctx-> taskController.createTask(ctx), Role.ANYONE);
-            put("/{id}", ctx -> taskController.updateTask(ctx), Role.ANYONE);
-            delete("/{id}", ctx -> taskController.deleteTask(ctx), Role.ANYONE);
+            get("/", ctx -> taskController.getAllTasks(ctx), Role.USER);
+            get("/{id}", ctx -> taskController.getAllTasksFromUser(ctx), Role.USER);
+            post("/", ctx-> taskController.createTask(ctx), Role.ADMIN);
+            put("/{id}", ctx -> taskController.updateTask(ctx), Role.USER);
+            delete("/{id}", ctx -> taskController.deleteTask(ctx), Role.ADMIN);
             delete("/user/{id}", ctx -> taskController.deleteAllTasksFromUser(ctx), Role.ANYONE);
         };
     }

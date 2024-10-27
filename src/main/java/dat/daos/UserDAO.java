@@ -25,18 +25,6 @@ public class UserDAO {
         }
     }
 
-    public User createUser(User user) {
-        EntityManager em = getEntityManager();
-        try {
-            em.getTransaction().begin();
-            em.persist(user);
-            em.getTransaction().commit();
-            return user;
-        } finally {
-            em.close();
-        }
-    }
-
     public void updateUser(User user) {
         EntityManager em = getEntityManager();
         try {

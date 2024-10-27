@@ -36,7 +36,6 @@ public class TaskDAO {
         }
     }
 
-
     public List<Task> getAllTasksFromUser(int userId) {
         EntityManager em = getEntityManager();
         try {
@@ -78,22 +77,20 @@ public class TaskDAO {
 
             Task task = em.find(Task.class, taskId);
             if (task != null) {
-                // remove task from attached user
+                // fjerner task fra vedhæftet bruger
                 User user = task.getUser();
                 if (user != null) {
                     user.getTasks().remove(task);
                     em.merge(user);
                 }
 
-                em.remove(task); // Remove the task itself
+                em.remove(task); // fjerner fra selve task
             }
 
             em.getTransaction().commit();
         } catch (Exception e) {
             em.getTransaction().rollback();
             throw new RuntimeException("Failed to delete task", e);
-        } finally {
-            em.close();
         }
     }
 
@@ -108,10 +105,7 @@ public class TaskDAO {
 
             em.getTransaction().commit();
         } catch (Exception e) {
-            em.getTransaction().rollback();
             throw new RuntimeException("Failed to delete tasks for user with ID: " + userID, e);
-        } finally {
-            em.close();
         }
     }
 
@@ -120,15 +114,14 @@ public class TaskDAO {
         EntityManager em = getEntityManager();
         try {
             em.getTransaction().begin();
-            // Delete all tasks with the same description as the base task and same user, excluding the base task
+            // slet alle tasks med samme beskrivelse som base tasken
             em.createQuery("DELETE FROM Task t WHERE t.user.userId = :userId AND t.description = (SELECT t2.description FROM Task t2 WHERE t2.taskID = :baseTaskId) AND t.taskID <> :baseTaskId")
                     .setParameter("userId", userId)
                     .setParameter("baseTaskId", baseTaskId)
                     .executeUpdate();
             em.getTransaction().commit();
-        } finally {
-            em.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete tasks for task with baseID: " + baseTaskId, e);
         }
     }
-
 }

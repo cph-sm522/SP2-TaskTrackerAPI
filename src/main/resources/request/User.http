@@ -1,14 +1,3 @@
-### Create a new user (Public)
-POST {{URL}}
-Content-Type: application/json
-Accept: application/json
-
-{
-  "username": "ole32",
-  "email": "ole@example.com",
-  "password": "hejmeddig123"
-}
-
 ### Get user by ID (Requires login)
 GET {{URL}}/1
 Accept: application/json

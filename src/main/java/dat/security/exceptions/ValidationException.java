@@ -5,6 +5,7 @@ package dat.security.exceptions;
  * Author: Thomas Hartmann
  */
 public class ValidationException extends Exception {
+
     public ValidationException(String message) {
         super(message);
     }

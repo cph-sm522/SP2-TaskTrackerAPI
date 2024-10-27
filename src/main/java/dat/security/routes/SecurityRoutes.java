@@ -9,29 +9,16 @@ import io.javalin.apibuilder.EndpointGroup;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
-/**
- * Purpose: To handle security in the API
- */
 public class SecurityRoutes {
     private static ObjectMapper jsonMapper = new Utils().getObjectMapper();
     private static SecurityController securityController = SecurityController.getInstance();
 
     public EndpointGroup getSecurityRoutes() {
-        return ()->{
-            path("/auth", ()->{
-                get("/test", ctx->ctx.json(jsonMapper.createObjectNode().put("msg",  "Hello from Open")), Role.ANYONE);
-                post("/login", securityController.login(), Role.ANYONE);
+        return () -> {
+                get("/test", ctx -> ctx.json(jsonMapper.createObjectNode().put("msg",  "Hello from Open")), Role.ANYONE);
+                post("/login", securityController.login(), Role.USER);
                 post("/register", securityController.register(), Role.ANYONE);
-                post("/user/addrole", securityController.addRole(), Role.USER);
-            });
-        };
-    }
-    public EndpointGroup getSecuredRoutes(){
-        return ()->{
-            path("/protected", ()->{
-                get("/user_demo", (ctx)->ctx.json(jsonMapper.createObjectNode().put("msg", "Hello from USER Protected")), Role.USER);
-                get("/admin_demo", (ctx)->ctx.json(jsonMapper.createObjectNode().put("msg", "Hello from ADMIN Protected")), Role.ADMIN);
-            });
-        };
+                post("/user/addrole", securityController.addRole(), Role.ADMIN);
+            };
     }
 }

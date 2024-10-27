@@ -26,13 +26,6 @@ public class UserController {
         }
     }
 
-    public void createUser(Context ctx) {
-        UserDTO userDTO = ctx.bodyAsClass(UserDTO.class);
-        User user = UserMapper.toEntity(userDTO);
-        User newUser = userDAO.createUser(user);
-        ctx.status(201).json(UserMapper.toDTO(newUser));
-    }
-
     public void updateUser(Context ctx) {
         int userId = Integer.parseInt(ctx.pathParam("id"));
         User existingUser = userDAO.getUserById(userId);

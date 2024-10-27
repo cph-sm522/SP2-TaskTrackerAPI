@@ -3,6 +3,7 @@ package dat.controllers;
 import dat.daos.TaskDAO;
 import dat.daos.UserDAO;
 import dat.dtos.TaskDTO;
+import dat.dtos.UserDTO;
 import dat.entities.Task;
 import dat.entities.User;
 import dat.mappers.TaskMapper;
@@ -62,8 +63,10 @@ public class TaskController {
             assignedUser.getTasks().add(newTask);
             userDAO.updateUser(assignedUser);
 
-            User updatedUser = userDAO.getUserById(taskDTO.getAssignedTo());
-            ctx.status(201).json(UserMapper.toDTO(updatedUser));
+            UserDTO userDTO = UserMapper.toDTO(assignedUser);
+            userDTO.setPassword(null);
+
+            ctx.status(201).json(userDTO);
         }
     }
 
@@ -114,6 +117,4 @@ public class TaskController {
             ctx.status(500).result("Error deleting tasks: " + e.getMessage());
         }
     }
-
-
 }

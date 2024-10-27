@@ -3,6 +3,7 @@ package dat.security.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.JOSEException;
+import dk.bugelhartmann.UserDTO;
 import dat.entities.User;
 import dat.mappers.UserMapper;
 import dat.utils.Utils;
@@ -14,7 +15,6 @@ import dat.security.exceptions.NotAuthorizedException;
 import dat.security.exceptions.ValidationException;
 import dk.bugelhartmann.ITokenSecurity;
 import dk.bugelhartmann.TokenSecurity;
-import dk.bugelhartmann.UserDTO;
 import io.javalin.http.Handler;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.UnauthorizedResponse;
@@ -59,18 +59,21 @@ public class SecurityController implements ISecurityController {
                 // Parse request body to local UserDTO
                 dat.dtos.UserDTO user = ctx.bodyAsClass(dat.dtos.UserDTO.class);
 
-                // Verify user credentials; this returns a dk.bugelhartmann.UserDTO
-                UserDTO verifiedUser = securityDAO.getVerifiedUser(user.getUsername(), user.getPassword());
+                dat.dtos.UserDTO verifiedUser = securityDAO.getVerifiedUser(user.getUsername(), user.getPassword());
 
-                // Convert Bugelhartmann UserDTO to local UserDTO
-                dat.dtos.UserDTO localUserDTO = UserMapper.fromBugelUserDTO(verifiedUser);
+                UserDTO bugelUserDTO = UserMapper.toBugelUserDTO(verifiedUser);
+
+                // Confirm username is set before token creation
+                if (bugelUserDTO.getUsername() == null) {
+                    throw new RuntimeException("Username is null in UserDTO");
+                }
 
                 // Create a token using Bugelhartmann UserDTO
-                String token = createToken(verifiedUser);
+                String token = createToken(bugelUserDTO);
 
                 ctx.status(200).json(returnObject
                         .put("token", token)
-                        .put("username", localUserDTO.getUsername()));
+                        .put("username", bugelUserDTO.getUsername()));
 
             } catch (EntityNotFoundException | ValidationException e) {
                 ctx.status(401);
@@ -85,13 +88,14 @@ public class SecurityController implements ISecurityController {
         return (ctx) -> {
             ObjectNode returnObject = objectMapper.createObjectNode();
             try {
-                UserDTO userInput = ctx.bodyAsClass(UserDTO.class);
-                User created = securityDAO.createUser(userInput.getUsername(), userInput.getPassword());
-                String token = createToken(new dk.bugelhartmann.UserDTO(created.getUsername(), created.getPassword(), Set.of("USER")));
+                dat.dtos.UserDTO userInput = ctx.bodyAsClass(dat.dtos.UserDTO.class);
+                User created = securityDAO.createUser(userInput.getUsername(), userInput.getPassword(), userInput.getEmail());
+                String token = createToken(new UserDTO(created.getUsername(), created.getPassword(), Set.of("USER")));
 
                 ctx.status(HttpStatus.CREATED).json(returnObject
                         .put("token", token)
-                        .put("username", created.getUsername()));
+                        .put("username", created.getUsername())
+                        .put("email", created.getEmail()));
             } catch (EntityExistsException e) {
                 ctx.status(HttpStatus.UNPROCESSABLE_CONTENT).json(returnObject.put("msg", "User already exists"));
             }
@@ -101,7 +105,6 @@ public class SecurityController implements ISecurityController {
     @Override
     public Handler authenticate() throws UnauthorizedResponse {
 
-        ObjectNode returnObject = objectMapper.createObjectNode();
         return (ctx) -> {
             // This is a preflight request => OK
             if (ctx.method().toString().equals("OPTIONS")) {
@@ -125,6 +128,7 @@ public class SecurityController implements ISecurityController {
                 throw new UnauthorizedResponse("Invalid User or Token");
             }
             logger.info("User verified: " + verifiedTokenUser);
+            System.out.println("Setting user attribute with username: " + verifiedTokenUser.getUsername());
             ctx.attribute("user", verifiedTokenUser);
         };
     }
@@ -159,6 +163,7 @@ public class SecurityController implements ISecurityController {
                 TOKEN_EXPIRE_TIME = Utils.getPropertyValue("TOKEN_EXPIRE_TIME", "config.properties");
                 SECRET_KEY = Utils.getPropertyValue("SECRET_KEY", "config.properties");
             }
+            System.out.println("Creating token for user: " + user.getUsername());
             return tokenSecurity.createToken(user, ISSUER, TOKEN_EXPIRE_TIME, SECRET_KEY);
         } catch (Exception e) {
             e.printStackTrace();
@@ -183,15 +188,24 @@ public class SecurityController implements ISecurityController {
         }
     }
 
-    public @NotNull Handler addRole() {
+    public Handler addRole() {
         return (ctx) -> {
             ObjectNode returnObject = objectMapper.createObjectNode();
             try {
-                // get the role from the body. the json is {"role": "manager"}.
+
+                authenticate().handle(ctx);
+                UserDTO bugelUserDTO = ctx.attribute("user");
+
+                if (bugelUserDTO == null) {
+                    throw new UnauthorizedResponse("User is not authenticated. Attribute 'user' is null.");
+                }
+
+                dat.dtos.UserDTO localUserDTO = UserMapper.fromBugelUserDTO(bugelUserDTO);
+
                 // We need to get the role from the body and the username from the token
                 String newRole = ctx.bodyAsClass(ObjectNode.class).get("role").asText();
-                UserDTO user = ctx.attribute("user");
-                User updatedUser = securityDAO.addRole(user, newRole);
+
+                securityDAO.addRole(localUserDTO, newRole);
                 ctx.status(200).json(returnObject.put("msg", "Role " + newRole + " added to user"));
             } catch (EntityNotFoundException e) {
                 ctx.status(404).json(returnObject.put("msg", "User not found"));

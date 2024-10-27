@@ -3,6 +3,9 @@ package dat.mappers;
 import dat.dtos.UserDTO;
 import dat.entities.User;
 import dat.security.entities.Role;
+
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UserMapper {
@@ -11,51 +14,37 @@ public class UserMapper {
         return new UserDTO(
                 user.getUserId(),
                 user.getUsername(),
-                null,
                 user.getEmail(),
                 user.getTasks() != null ?
                         user.getTasks().stream()
                                 .map(TaskMapper::toDTO)
                                 .collect(Collectors.toList()) : null,
+
                 user.getRoles() != null ?
                         user.getRoles().stream()
-                                .collect(Collectors.toSet()) : null
+                                .map(Role::getRoleName) //konverter role til rolenavn
+                                .collect(Collectors.toSet()) : new HashSet<>() // opretter og bruger et tomt Set hvis roles er null
         );
     }
 
-    public static User toEntity(UserDTO userDTO) {
-        return new User(
-                userDTO.getUserId(),
-                userDTO.getUsername(),
-                null,
-                userDTO.getEmail(),
-                null,
-                userDTO.getRoles() != null ?
-                        userDTO.getRoles().stream()
-                                .collect(Collectors.toSet()) : null
-        );
-    }
-
-    // from local dto to bugelhartmann dto
-    public static dk.bugelhartmann.UserDTO toBugelUserDTO(UserDTO userDTO) {
+    public static dk.bugelhartmann.UserDTO toBugelUserDTO(UserDTO localUserDTO) {
         return new dk.bugelhartmann.UserDTO(
-                userDTO.getUsername(),
-                userDTO.getPassword(),
-                userDTO.getRoles() != null ?
-                        userDTO.getRoles().stream()
-                                .map(Role::getRoleName)
-                                .collect(Collectors.toSet()) : null
+                localUserDTO.getUsername(),
+                localUserDTO.getPassword(),
+                localUserDTO.getRoles() != null ? new HashSet<>(localUserDTO.getRoles()) : Set.of()
         );
     }
 
-    // from bugelhartmann dto to local dto
     public static UserDTO fromBugelUserDTO(dk.bugelhartmann.UserDTO bugelUserDTO) {
-        return new UserDTO(
-                0,
-                bugelUserDTO.getUsername(),
-                null,
-                null,
-                bugelUserDTO.getRoles() // Mapping roles
-        );
+
+        UserDTO localUserDTO = new UserDTO();
+        localUserDTO.setUsername(bugelUserDTO.getUsername());
+
+        // mapper roler til String i stedet for sets
+        localUserDTO.setRoles(bugelUserDTO.getRoles().stream()
+                .map(String::valueOf)
+                .collect(Collectors.toSet()));
+
+        return localUserDTO;
     }
 }

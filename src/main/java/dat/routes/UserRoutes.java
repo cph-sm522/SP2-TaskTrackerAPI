@@ -17,7 +17,6 @@ public class UserRoutes {
     public EndpointGroup getUserRoutes() {
         return () -> {
             path("/", () -> {
-                post(userController::createUser);
                 get("/{id}", userController::getUserById);
                 put("/{id}", userController::updateUser);
                 delete("/{id}", userController::deleteUser);

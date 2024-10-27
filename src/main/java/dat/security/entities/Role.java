@@ -9,10 +9,6 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Purpose: To handle security in the API
- *  Author: Thomas Hartmann
- */
 @Entity
 @Table(name = "roles")
 @NamedQueries(@NamedQuery(name = "Role.deleteAllRows", query = "DELETE from Role"))
@@ -23,7 +19,7 @@ public class Role implements Serializable {
 
     @Id
     @Basic(optional = false)
-    @Column(name = "name", length = 20)
+    @Column(name = "name")
     private String name;
 
     @ToString.Exclude

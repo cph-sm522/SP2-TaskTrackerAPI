@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.HashSet;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 @Data
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -33,25 +35,17 @@ public class User {
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     private Set<Role> roles = new HashSet<>();
 
+    public User(String username, String password, String email) {
+    }
+
     public boolean verifyPassword(String pw) {
         return BCrypt.checkpw(pw, this.password);
     }
 
-    public User(String userName, String userPass) {
-        this.username = userName;
-        this.password = BCrypt.hashpw(userPass, BCrypt.gensalt());
-    }
-
-    public User(String userName, Set<Role> roleList) {
-        this.username = userName;
-        this.roles = roleList;
-    }
-
     public void addRole(Role role) {
-        if (role == null) {
-            return;
+        if (role != null && !roles.contains(role) ) {
+            roles.add(role);
+            role.getUsers().add(this);
         }
-        roles.add(role);
-        role.getUsers().add(this);
     }
 }

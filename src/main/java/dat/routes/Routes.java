@@ -7,20 +7,17 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 
 public class Routes {
 
-    private final TaskRoutes taskRoutes = new TaskRoutes(); // Adds task routes
+    private final TaskRoutes taskRoutes = new TaskRoutes();
     private final UserRoutes userRoutes = new UserRoutes();
     private final SecurityRoutes securityRoutes = new SecurityRoutes();
 
     public EndpointGroup getApiRoutes() {
         return () -> {
-            // Public routes: No authentication required
-            path("/auth", securityRoutes.getSecurityRoutes()); // For login and registration
 
-            // Protected routes: Requires authentication
+            path("/api/auth", securityRoutes.getSecurityRoutes());
             path("/api", () -> {
-                path("/tasks", taskRoutes.getTaskRoutes());  // Task-related routes (CRUD)
-                path("/users", userRoutes.getUserRoutes());  // User-related routes (CRUD)
-                path("/protected", securityRoutes.getSecuredRoutes()); // Secured routes (user and admin demos)
+                path("/tasks", taskRoutes.getTaskRoutes());
+                path("/users", userRoutes.getUserRoutes());
             });
         };
     }

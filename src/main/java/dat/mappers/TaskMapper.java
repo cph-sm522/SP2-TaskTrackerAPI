@@ -8,8 +8,6 @@ import dat.entities.User;
 public class TaskMapper {
 
     public static TaskDTO toDTO(Task task) {
-        User user = task.getUser();
-        UserDTO userDTO = new UserDTO(user.getUserId(), user.getUsername(), null, null);  // Only include the needed fields
 
         return new TaskDTO(
                 task.getTaskID(),
